@@ -7,21 +7,29 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class Search {
-    public static void main(String[] args) {
+    public static final String red = "\u001B[31m";
+    public static final String exit = "\u001B[0m";
+
+    public static void main(String[] args) throws IOException {
         try (ElasticConfiguration elasticConfiguration = new ElasticConfiguration("localhost", 9200, "")) {
             RestHighLevelClient client = elasticConfiguration.getElasticClient();
+            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+            String keyword = br.readLine();
 
             // 검색 요청을 만들기
             SearchRequest searchRequest = new SearchRequest("news_articles");
             SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-            sourceBuilder.query(QueryBuilders.matchAllQuery());
+            sourceBuilder.query(QueryBuilders.multiMatchQuery(keyword, "writer", "title", "contents"));
             sourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
             searchRequest.source(sourceBuilder);
 
@@ -49,7 +57,7 @@ public class Search {
                         .append(newsArticle.contents).append("/")
                         .append("\n\n");
             }
-            System.out.println(result);
+            System.out.println(result.toString().replaceAll(keyword, red + keyword + exit));
 
         } catch (IOException e) {
             e.printStackTrace();

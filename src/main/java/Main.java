@@ -18,8 +18,8 @@ public class Main {
 
         try (ElasticConfiguration elasticConfiguration = new ElasticConfiguration("localhost", 9200, "")) {
 
-            String index = "bulkindex";
-            String filePath = "C:\\Users\\mayfarm\\Desktop\\es\\chatbot_data.json";
+            String index = "news_articles";
+            String filePath = "C:\\Users\\mayfarm\\Desktop\\es\\crawl_yhn.json";
 
             List<Map<String, Object>> jsonData = readJsonFile(filePath);
 
@@ -27,7 +27,7 @@ public class Main {
             bulkInsert(elasticConfiguration, index, jsonData);
 
             // 예제로 몇 개의 문서를 가져와서 출력
-            retrieveAndPrintDocuments(elasticConfiguration, index, 5);
+            retrieveAndPrintDocuments(elasticConfiguration, index, 10);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -45,9 +45,14 @@ public class Main {
         BulkRequest bulkRequest = new BulkRequest();
 
         for (Map<String, Object> data : jsonData) {
-            String id = data.get("id").toString();
+            String id = data.get("_id").toString();
+            data.remove("_id");
             IndexRequest indexRequest = new IndexRequest(index).id(id)
                     .source(data, XContentType.JSON);
+
+            if (id != null && !id.isEmpty()) {
+                indexRequest.id(id);
+            }
 
             bulkRequest.add(indexRequest);
         }
@@ -56,6 +61,8 @@ public class Main {
 
         if (bulkResponse.hasFailures()) {
             System.out.println("Bulk insert failed: " + bulkResponse.buildFailureMessage());
+        } else {
+            System.out.println("Bulk insert successful");
         }
     }
 
